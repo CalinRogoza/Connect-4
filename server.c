@@ -22,6 +22,13 @@
 #define PORT 2908
 #define RANDURI 6
 #define COLOANE 7
+#define RED  "\x1B[31m"   //https://stackoverflow.com/questions/3585846/color-text-in-terminal-applications-in-unix
+#define GREEN  "\x1B[32m"
+#define YELLOW  "\x1B[33m"
+#define BLUE  "\x1B[34m"
+#define MAGENTA  "\x1B[35m"
+#define CYAN  "\x1B[36m"
+#define RESET  "\x1b[0m"
 
 /* codul de eroare returnat de anumite apeluri */
 extern int errno;
@@ -36,11 +43,13 @@ void raspunde(void *);
 int is_final(char gameboard[RANDURI][COLOANE]);
 int verifica_orizontala(char gameboard[RANDURI][COLOANE]);
 int verifica_verticala(char gameboard[RANDURI][COLOANE]);
+int verifica_diagonala_principala(char gameboard[RANDURI][COLOANE]);
+int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE]);
 void print_gameboard(char gameboard[RANDURI][COLOANE]);
+char gameboard[RANDURI][COLOANE];
 
 int main ()
 {
-  char gameboard[RANDURI][COLOANE];
   /* initializam matricea */
   for (int i = 0; i < RANDURI; i++)
   {
@@ -55,9 +64,13 @@ int main ()
   gameboard[0][2] = 'B';
   gameboard[0][3] = 'A';
   gameboard[2][0] = 'A';
-  gameboard[3][0] = 'A';
-  gameboard[4][0] = 'A';
-  gameboard[5][0] = 'A';
+  gameboard[3][1] = 'A';
+  gameboard[4][2] = 'A';
+  gameboard[5][3] = 'B';
+  gameboard[0][5] = 'B';
+  gameboard[1][4] = 'B';
+  gameboard[2][3] = 'B';
+  gameboard[3][2] = 'B';
 
   print_gameboard(gameboard);
   
@@ -78,10 +91,10 @@ int main ()
 
   /* crearea unui socket */
   if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-      perror ("[server]Eroare la socket().\n");
-      return errno;
-    }
+  {
+    perror ("[server]Eroare la socket().\n");
+    return errno;
+  }
   /* utilizarea optiunii SO_REUSEADDR */
   int on=1;
   setsockopt(sd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
@@ -100,36 +113,36 @@ int main ()
   
   /* atasam socketul */
   if (bind (sd, (struct sockaddr *) &server, sizeof (struct sockaddr)) == -1)
-    {
-      perror ("[server]Eroare la bind().\n");
-      return errno;
-    }
+  {
+    perror ("[server]Eroare la bind().\n");
+    return errno;
+  }
 
   /* punem serverul sa asculte daca vin clienti sa se conecteze */
   if (listen (sd, 2) == -1)
-    {
-      perror ("[server]Eroare la listen().\n");
-      return errno;
-    }
+  {
+    perror ("[server]Eroare la listen().\n");
+    return errno;
+  }
   /* servim in mod concurent clientii...folosind thread-uri */
   while (1)
-    {
-      int client;
-      thData * td; //parametru functia executata de thread     
-      int length = sizeof (from);
+  {
+    int client;
+    thData * td; //parametru functia executata de thread     
+    int length = sizeof (from);
 
-      printf ("[server]Asteptam la portul %d...\n",PORT);
-      fflush (stdout);
+    printf ("[server]Asteptam la portul %d...\n",PORT);
+    fflush (stdout);
 
-      // client= malloc(sizeof(int));
-      /* acceptam un client (stare blocanta pina la realizarea conexiunii) */
-      if ( (client = accept (sd, (struct sockaddr *) &from, &length)) < 0)
-	{
-	  perror ("[server]Eroare la accept().\n");
-	  continue;
-	}
+    // client= malloc(sizeof(int));
+    /* acceptam un client (stare blocanta pina la realizarea conexiunii) */
+    if ( (client = accept (sd, (struct sockaddr *) &from, &length)) < 0)
+	  {
+	    perror ("[server]Eroare la accept().\n");
+	    continue;
+	  }
 	
-        /* s-a realizat conexiunea, se astepta mesajul */
+  /* s-a realizat conexiunea, se astepta mesajul */
     
 	// int idThread; //id-ul threadului
 	// int cl; //descriptorul intors de accept
@@ -141,64 +154,49 @@ int main ()
 	pthread_create(&th[i], NULL, &treat, td);	      
 				
 	}//while    
-};				
+}
+
+
 static void *treat(void * arg)
 {		
-		struct thData tdL; 
-		tdL= *((struct thData*)arg);	
-		printf ("[thread]- %d - Asteptam mesajul...\n", tdL.idThread);
-		fflush (stdout);		 
-		pthread_detach(pthread_self());		
-		raspunde((struct thData*)arg);
-		/* am terminat cu acest client, inchidem conexiunea */
-		close ((intptr_t)arg);
-		return(NULL);	
-  		
+	struct thData tdL; 
+	tdL= *((struct thData*)arg);	
+	printf ("[thread]- %d - Asteptam mesajul...\n", tdL.idThread);
+	fflush (stdout);		 
+	pthread_detach(pthread_self());		
+	raspunde((struct thData*)arg);
+	/* am terminat cu acest client, inchidem conexiunea */
+	close ((intptr_t)arg);
+	return(NULL);	
 };
 
 
 void raspunde(void *arg)
 {
-  int nr, i=0;
+  int i=0;
+  char color[100];
 	struct thData tdL; 
 	tdL= *((struct thData*)arg);
-	if (read (tdL.cl, &nr,sizeof(int)) <= 0)
-			{
-			  printf("[Thread %d]\n",tdL.idThread);
-			  perror ("Eroare la read() de la client.\n");
-			
-			}
-  int a[2][3];
-  for (int i = 0; i < 2; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-      if (i == 0)
-      {
-        a[i][j] = 0;
-      }
-      else
-      {
-        a[i][j] = 1;
-      }
-    }
-  }
+	if (read (tdL.cl, &color,sizeof(color)) <= 0)
+	{
+	  printf("[Thread %d]\n",tdL.idThread);
+	  perror ("Eroare la read() de la client.\n");
+	}
   
-	printf ("[Thread %d]Mesajul a fost receptionat...%d\n",tdL.idThread, nr);
+	printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, color);
 		      
-	/*pregatim mesajul de raspuns */
-	nr++;      
-	printf("[Thread %d]Trimitem mesajul inapoi...%d\n",tdL.idThread, nr);
+	/*pregatim mesajul de raspuns */   
+	printf("[Thread %d]Trimitem mesajul inapoi...%s\n",tdL.idThread, color);
 		      
 		      
 	/* returnam mesajul clientului */
-	 if (write (tdL.cl, &a, sizeof(a)) <= 0)
-		{
-		 printf("[Thread %d] ",tdL.idThread);
-		 perror ("[Thread]Eroare la write() catre client.\n");
-		}
+	if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+	{
+	  printf("[Thread %d] ",tdL.idThread);
+		perror ("[Thread]Eroare la write() catre client.\n");
+	}
 	else
-		printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);	
+	  printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);	
 
 }
 
@@ -229,13 +227,12 @@ void print_gameboard(char gameboard[RANDURI][COLOANE])
 
 int is_final(char gameboard[RANDURI][COLOANE])
 {
-  if (verifica_verticala(gameboard) == 1 || verifica_orizontala(gameboard) == 1)
+  if (verifica_verticala(gameboard) || verifica_orizontala(gameboard) || verifica_diagonala_principala(gameboard) || verifica_diagonala_secundara(gameboard))
   {
     return 1;
   }
   return 0;
 }
-
 
 int verifica_orizontala(char gameboard[RANDURI][COLOANE])
 {
@@ -257,6 +254,36 @@ int verifica_verticala(char gameboard[RANDURI][COLOANE])
     for (int j = 0; j < COLOANE; j++)
     {
       if (gameboard[i][j] == gameboard[i+1][j] && gameboard[i+1][j] == gameboard[i+2][j] && gameboard[i+2][j] == gameboard[i+3][j] && gameboard[i][j] != ' ')
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+int verifica_diagonala_principala(char gameboard[RANDURI][COLOANE])
+{
+  for (int i = 0; i < RANDURI - 3; i++)
+  {
+    for (int j = 0; j < COLOANE - 3; j++)
+    {
+      if (gameboard[i][j] == gameboard[i+1][j+1] && gameboard[i+1][j+1] == gameboard[i+2][j+2] && gameboard[i+2][j+2] == gameboard[i+3][j+3] && gameboard[i][j] != ' ')
+      {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE])
+{
+  for (int i = 0; i < RANDURI - 3; i++)
+  {
+    for (int j = COLOANE; j >= 3; j--)
+    {
+      if (gameboard[i][j] == gameboard[i+1][j-1] && gameboard[i+1][j-1] == gameboard[i+2][j-2] && gameboard[i+2][j-2] == gameboard[i+3][j-3] && gameboard[i][j] != ' ')
       {
         return 1;
       }

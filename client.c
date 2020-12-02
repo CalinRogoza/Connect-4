@@ -13,11 +13,57 @@
 #include <netdb.h>
 #include <string.h>
 
+#define RANDURI 6
+#define COLOANE 7
+#define RED  "\x1B[31m"   //https://stackoverflow.com/questions/3585846/color-text-in-terminal-applications-in-unix
+#define GREEN  "\x1B[32m"
+#define YELLOW  "\x1B[33m"
+#define BLUE  "\x1B[34m"
+#define MAGENTA  "\x1B[35m"
+#define CYAN  "\x1B[36m"
+#define RESET  "\x1b[0m"
+char gameboard[RANDURI][COLOANE];
+
 /* codul de eroare returnat de anumite apeluri */
 extern int errno;
 
 /* portul de conectare la server*/
 int port;
+
+
+void print_gameboard(char gameboard[RANDURI][COLOANE])
+{
+  for (int i = 0; i <= COLOANE + 1; i++)
+  {
+    printf("%c",'_');
+  }
+  printf("\n");
+  for (int i = 0; i < RANDURI; i++)
+  {
+    printf("%c",'|');
+    for (int j = 0; j < COLOANE; j++)
+    {
+      if (gameboard[i][j] == 'A')
+      {      
+        printf(RED "%c" RESET, gameboard[i][j]);
+      }
+      else
+      {
+        printf(BLUE "%c" RESET, gameboard[i][j]);
+      }
+    }
+    printf("%c",'|');
+    printf("\n");
+  }
+  for (int i = 0; i <= COLOANE + 1; i++)
+  {
+    printf("%c",'^');
+    fflush(stdout);
+  }
+  printf("\n");
+  fflush(stdout);
+}
+
 
 int main (int argc, char *argv[])
 {
@@ -25,7 +71,7 @@ int main (int argc, char *argv[])
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
   int nr=0;
-  char buf[10];
+  char buf[100];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -60,39 +106,37 @@ int main (int argc, char *argv[])
     }
 
   /* citirea mesajului */
-  printf ("[client]Introduceti un numar: ");
+  printf ("[client]Alegeti o culoare cu care sa jucati(");
+  printf(RED "RED" RESET "/");
+  printf(BLUE "BLUE" RESET "/");
+  printf(CYAN "CYAN" RESET "/");
+  printf(MAGENTA "MAGENTA" RESET "/");
+  printf(YELLOW "YELLOW" RESET "/");
+  printf(GREEN "GREEN" RESET "): ");
   fflush (stdout);
   read (0, buf, sizeof(buf));
-  nr=atoi(buf);
   //scanf("%d",&nr);
   
-  printf("[client] Am citit %d\n",nr);
+  printf(BLUE "[client] Am citit %s\n" RESET, buf);
 
   /* trimiterea mesajului la server */
-  if (write (sd,&nr,sizeof(int)) <= 0)
+  if (write (sd,&buf,sizeof(buf)) <= 0)
     {
       perror ("[client]Eroare la write() spre server.\n");
       return errno;
     }
-  int a[2][3];
+
   /* citirea raspunsului dat de server 
      (apel blocant pina cind serverul raspunde) */
-  if (read (sd, &a,sizeof(a)) < 0)
+  if (read (sd, &gameboard,sizeof(gameboard)) < 0)
     {
       perror ("[client]Eroare la read() de la server.\n");
       return errno;
     }
+  
   /* afisam mesajul primit */
   printf ("[client]Mesajul primit este: \n");
-  for (int i = 0; i < 2; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-      printf("%d", a[i][j]);
-    }
-    printf("\n");
-  }
-  
+  print_gameboard(gameboard);  
 
   /* inchidem conexiunea, am terminat */
   close (sd);
