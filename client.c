@@ -74,16 +74,25 @@ int main (int argc, char *argv[])
       perror ("[client]Eroare la write() spre server.\n");
       return errno;
     }
-
+  int a[2][3];
   /* citirea raspunsului dat de server 
      (apel blocant pina cind serverul raspunde) */
-  if (read (sd, &nr,sizeof(int)) < 0)
+  if (read (sd, &a,sizeof(a)) < 0)
     {
       perror ("[client]Eroare la read() de la server.\n");
       return errno;
     }
   /* afisam mesajul primit */
-  printf ("[client]Mesajul primit este: %d\n", nr);
+  printf ("[client]Mesajul primit este: \n");
+  for (int i = 0; i < 2; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      printf("%d", a[i][j]);
+    }
+    printf("\n");
+  }
+  
 
   /* inchidem conexiunea, am terminat */
   close (sd);
