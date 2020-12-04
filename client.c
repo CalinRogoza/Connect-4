@@ -70,8 +70,8 @@ int main (int argc, char *argv[])
   int sd;			// descriptorul de socket
   struct sockaddr_in server;	// structura folosita pentru conectare 
   		// mesajul trimis
-  int nr=0;
-  char buf[100];
+  int nr=0, mutare;
+  char culoare[100];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -114,13 +114,13 @@ int main (int argc, char *argv[])
   printf(YELLOW "YELLOW" RESET "/");
   printf(GREEN "GREEN" RESET "): ");
   fflush (stdout);
-  read (0, buf, sizeof(buf));
+  read (0, culoare, sizeof(culoare));     //citim culoarea selectata de player
   //scanf("%d",&nr);
   
-  printf(BLUE "[client] Am citit %s\n" RESET, buf);
+  printf(BLUE "[client] Am citit %s\n" RESET, culoare);
 
   /* trimiterea mesajului la server */
-  if (write (sd,&buf,sizeof(buf)) <= 0)
+  if (write (sd, &culoare, sizeof(culoare)) <= 0)
     {
       perror ("[client]Eroare la write() spre server.\n");
       return errno;
@@ -138,6 +138,35 @@ int main (int argc, char *argv[])
   printf ("[client]Mesajul primit este: \n");
   print_gameboard(gameboard);  
 
+  char start[5];
+  if (read (sd, &start, sizeof(start)) < 0)      // apel blocant pana cand primim mesaj ca putem incepe jocul
+    {
+      perror ("[client]Eroare la read() de la server.\n");
+      return errno;
+    }
+  
+  printf("Putem incepe jocul!\n");
+
+  while (culoare != "r")
+  {
+    printf("[client] Faceti o mutare!\n");
+    scanf("%d", &mutare);
+    
+    if (write (sd, &mutare, sizeof(mutare)) <= 0)
+    {
+      perror ("[client]Eroare la write() spre server.\n");
+      return errno;
+    }
+
+    if (read (sd, &gameboard,sizeof(gameboard)) < 0)
+    {
+      perror ("[client]Eroare la read() de la server.\n");
+      return errno;
+    }
+
+    print_gameboard(gameboard);
+  }
+  
   /* inchidem conexiunea, am terminat */
   close (sd);
 }

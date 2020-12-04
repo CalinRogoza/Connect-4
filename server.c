@@ -40,44 +40,40 @@ typedef struct thData{
 
 static void *treat(void *); /* functia executata de fiecare thread ce realizeaza comunicarea cu clientii */
 void raspunde(void *);
+char gameboard[RANDURI][COLOANE];
+int numar_jucatori = 0;
 int is_final(char gameboard[RANDURI][COLOANE]);
 int verifica_orizontala(char gameboard[RANDURI][COLOANE]);
 int verifica_verticala(char gameboard[RANDURI][COLOANE]);
 int verifica_diagonala_principala(char gameboard[RANDURI][COLOANE]);
 int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE]);
 void print_gameboard(char gameboard[RANDURI][COLOANE]);
-char gameboard[RANDURI][COLOANE];
+void initializeaza_matrice(char gameboard[RANDURI][COLOANE]);
 
 int main ()
 {
   /* initializam matricea */
-  for (int i = 0; i < RANDURI; i++)
-  {
-    for (int j = 0; j < COLOANE; j++)
-    {
-      gameboard[i][j] = ' ';
-    }
-  }
+  initializeaza_matrice(gameboard);
 
-  gameboard[0][0] = 'A';
-  gameboard[0][1] = 'A';
-  gameboard[0][2] = 'B';
-  gameboard[0][3] = 'A';
-  gameboard[2][0] = 'A';
-  gameboard[3][1] = 'A';
-  gameboard[4][2] = 'A';
-  gameboard[5][3] = 'B';
-  gameboard[0][5] = 'B';
-  gameboard[1][4] = 'B';
-  gameboard[2][3] = 'B';
-  gameboard[3][2] = 'B';
+  // gameboard[0][0] = 'A';
+  // gameboard[0][1] = 'A';
+  // gameboard[0][2] = 'B';
+  // gameboard[0][3] = 'A';
+  // gameboard[2][0] = 'A';
+  // gameboard[3][1] = 'A';
+  // gameboard[4][2] = 'A';
+  // gameboard[5][3] = 'B';
+  // gameboard[0][5] = 'B';
+  // gameboard[1][4] = 'B';
+  // gameboard[2][3] = 'B';
+  // gameboard[3][2] = 'B';
 
   print_gameboard(gameboard);
   
-  if (is_final(gameboard) == 1)
-  {
-    printf("%s \n","SUPER");
-  }
+  // if (is_final(gameboard) == 1)
+  // {
+  //   printf("%s \n","SUPER");
+  // }
   
 
   struct sockaddr_in server;	// structura folosita de server
@@ -151,6 +147,8 @@ int main ()
 	td->idThread=i++;
 	td->cl=client;
 
+  numar_jucatori++;
+
 	pthread_create(&th[i], NULL, &treat, td);	      
 				
 	}//while    
@@ -174,9 +172,13 @@ static void *treat(void * arg)
 void raspunde(void *arg)
 {
   int i=0;
+  int mutare;
   char color[100];
+  char player = 'A';
+  int joc_terminat = 0;
 	struct thData tdL; 
 	tdL= *((struct thData*)arg);
+
 	if (read (tdL.cl, &color,sizeof(color)) <= 0)
 	{
 	  printf("[Thread %d]\n",tdL.idThread);
@@ -198,6 +200,46 @@ void raspunde(void *arg)
 	else
 	  printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);	
 
+  if(numar_jucatori == 2)
+  {
+    char start[5] = "START";
+    if (write (tdL.cl, &start, sizeof(start)) <= 0) //trimitem mesaj ca putem incepe jocul
+	  {
+	    printf("[Thread %d] ",tdL.idThread);
+		  perror ("[Thread]Eroare la write() catre client.\n");
+	  }
+
+    while(is_final(gameboard) == 0)
+    {
+      if (read(tdL.cl, &mutare, sizeof(mutare)) <= 0)       //strchr("PLAYER1","PLAYER2")
+      {
+        printf("[Thread %d]\n", tdL.idThread);
+        perror("Eroare la read() de la cient.\n");
+      }
+      printf("MUTAREA PE COLOANA %d\n", mutare);
+
+      int a = 0;
+      for (int i = RANDURI - 1; i >= 0 && a == 0; i--)    // fac mutare
+      {
+        if (gameboard[i][mutare] == ' ')
+        {
+          gameboard[i][mutare] = player;
+          a = 1;
+        }
+      }
+     
+      player = 'B';   //randul urmatorului player
+
+      //fac write la tabla de joc catre client
+      if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+      {
+        printf("[Thread %d] ",tdL.idThread);
+        perror ("[Thread]Eroare la write() catre client.\n");
+      }
+      
+      printf("AM AJUNS AICI\n");
+    }
+  }
 }
 
 
@@ -290,4 +332,15 @@ int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE])
     }
   }
   return 0;
+}
+
+void initializeaza_matrice(char gameboard[RANDURI][COLOANE])
+{
+  for (int i = 0; i < RANDURI; i++)
+  {
+    for (int j = 0; j < COLOANE; j++)
+    {
+      gameboard[i][j] = ' ';
+    }
+  }
 }
