@@ -50,6 +50,9 @@ int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE]);
 void print_gameboard(char gameboard[RANDURI][COLOANE]);
 void initializeaza_matrice(char gameboard[RANDURI][COLOANE]);
 
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+
 int main ()
 {
   /* initializam matricea */
@@ -171,8 +174,9 @@ static void *treat(void * arg)
 
 void raspunde(void *arg)
 {
-  int i=0;
+  int i = 0;
   int mutare;
+  char turn[10] = "1";
   char color[100];
   char player = 'A';
   int joc_terminat = 0;
@@ -188,58 +192,194 @@ void raspunde(void *arg)
 	printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, color);
 		      
 	/*pregatim mesajul de raspuns */   
-	printf("[Thread %d]Trimitem mesajul inapoi...%s\n",tdL.idThread, color);
-		      
-		      
-	/* returnam mesajul clientului */
-	if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
-	{
-	  printf("[Thread %d] ",tdL.idThread);
-		perror ("[Thread]Eroare la write() catre client.\n");
-	}
-	else
-	  printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);	
+	//printf("[Thread %d]Trimitem mesajul inapoi...%s\n",tdL.idThread, color);
 
+  printf("AM AJ");
+  printf("%d", numar_jucatori);
   if(numar_jucatori == 2)
-  {
-    char start[5] = "START";
-    if (write (tdL.cl, &start, sizeof(start)) <= 0) //trimitem mesaj ca putem incepe jocul
-	  {
-	    printf("[Thread %d] ",tdL.idThread);
-		  perror ("[Thread]Eroare la write() catre client.\n");
-	  }
-
-    while(is_final(gameboard) == 0)
+  {	
+    while (is_final(gameboard) == 0)
     {
-      if (read(tdL.cl, &mutare, sizeof(mutare)) <= 0)       //strchr("PLAYER1","PLAYER2")
-      {
-        printf("[Thread %d]\n", tdL.idThread);
-        perror("Eroare la read() de la cient.\n");
-      }
-      printf("MUTAREA PE COLOANA %d\n", mutare);
+      if(strcmp(turn, "1") == 0)
+      { 
 
-      int a = 0;
-      for (int i = RANDURI - 1; i >= 0 && a == 0; i--)    // fac mutare
-      {
-        if (gameboard[i][mutare] == ' ')
-        {
-          gameboard[i][mutare] = player;
-          a = 1;
+        if (tdL.idThread == 1)
+        { pthread_mutex_lock(&mutex1);
+          strcpy(turn, "WAIT");
+
+          if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+          pthread_mutex_unlock(&mutex2);
         }
-      }
-     
-      player = 'B';   //randul urmatorului player
+        
+        if(tdL.idThread == 0)
+        { pthread_mutex_lock(&mutex2);
+          strcpy(turn, "1");
 
-      //fac write la tabla de joc catre client
-      if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+          player = 'A';
+
+          if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+          
+          if(write(tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+
+          if(read(tdL.cl, &mutare, sizeof(mutare)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la read() catre client.\n");
+          }
+
+          int a = 0;
+          for (int i = RANDURI - 1; i >= 0 && a == 0; i--)    // fac mutare
+          {
+            if (gameboard[i][mutare] == ' ')
+            {
+              gameboard[i][mutare] = player;
+              a = 1;
+            }
+          }
+
+          print_gameboard(gameboard);
+
+          pthread_mutex_unlock(&mutex1);
+        }
+        strcpy(turn, "2");
+
+      }
+      else if (strcmp(turn, "2") == 0)
+      { 
+
+        if (tdL.idThread == 0)
+        { pthread_mutex_lock(&mutex2);
+          strcpy(turn, "WAIT");
+
+          if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+          pthread_mutex_unlock(&mutex1);
+        }
+
+        if(tdL.idThread == 1)
+        { pthread_mutex_lock(&mutex1);
+          strcpy(turn, "2");
+
+          player = 'B';
+
+          if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+          
+          if(write(tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la write() catre client.\n");
+          }
+
+          if(read(tdL.cl, &mutare, sizeof(mutare)) <= 0)
+          {
+            printf("[Thread %d] ",tdL.idThread);
+            perror ("[Thread]Eroare la read() catre client.\n");
+          }
+
+          int a = 0;
+          for (int i = RANDURI - 1; i >= 0 && a == 0; i--)    // fac mutare
+          {
+            if (gameboard[i][mutare] == ' ')
+            {
+              gameboard[i][mutare] = player;
+              a = 1;
+            }
+          }
+
+          print_gameboard(gameboard);
+
+          pthread_mutex_unlock(&mutex2);
+        }
+        strcpy(turn, "1");
+        
+        
+      }
+      //if(strcmp(turn,"1") == 0)
+    }
+    if (is_final(gameboard) == 1)
+    {
+      // pthread_mutex_lock(&mutex1);
+      // pthread_mutex_lock(&mutex2);
+      strcpy(turn, "TERMINAT");
+      printf("ALOOOOOOOOO");
+
+      if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
       {
         printf("[Thread %d] ",tdL.idThread);
         perror ("[Thread]Eroare la write() catre client.\n");
       }
-      
-      printf("AM AJUNS AICI\n");
     }
+    
   }
+		      
+	// /* returnam mesajul clientului */
+	// if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+	// {
+	//   printf("[Thread %d] ",tdL.idThread);
+	// 	perror ("[Thread]Eroare la write() catre client.\n");
+	// }
+	// else
+	//   printf ("[Thread %d]Mesajul a fost trasmis cu succes.\n",tdL.idThread);	
+
+  // if(numar_jucatori == 2)
+  // {
+  //   char start[5] = "START";
+  //   if (write (tdL.cl, &start, sizeof(start)) <= 0) //trimitem mesaj ca putem incepe jocul
+	//   {
+	//     printf("[Thread %d] ",tdL.idThread);
+	// 	  perror ("[Thread]Eroare la write() catre client.\n");
+	//   }
+
+  //   while(is_final(gameboard) == 0)
+  //   {
+  //     if (read(tdL.cl, &mutare, sizeof(mutare)) <= 0)       //strchr("PLAYER1","PLAYER2")
+  //     {
+  //       printf("[Thread %d]\n", tdL.idThread);
+  //       perror("Eroare la read() de la cient.\n");
+  //     }
+  //     printf("MUTAREA PE COLOANA %d\n", mutare);
+
+  //     int a = 0;
+  //     for (int i = RANDURI - 1; i >= 0 && a == 0; i--)    // fac mutare
+  //     {
+  //       if (gameboard[i][mutare] == ' ')
+  //       {
+  //         gameboard[i][mutare] = player;
+  //         a = 1;
+  //       }
+  //     }
+     
+  //     player = 'B';   //randul urmatorului player
+
+  //     //fac write la tabla de joc catre client
+  //     if (write (tdL.cl, &gameboard, sizeof(gameboard)) <= 0)
+  //     {
+  //       printf("[Thread %d] ",tdL.idThread);
+  //       perror ("[Thread]Eroare la write() catre client.\n");
+  //     }
+      
+  //     printf("AM AJUNS AICI\n");
+  //   }
+  // }
 }
 
 

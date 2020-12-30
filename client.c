@@ -72,6 +72,7 @@ int main (int argc, char *argv[])
   		// mesajul trimis
   int nr=0, mutare;
   char culoare[100];
+  char turn[10];
 
   /* exista toate argumentele in linia de comanda? */
   if (argc != 3)
@@ -126,46 +127,92 @@ int main (int argc, char *argv[])
       return errno;
     }
 
-  /* citirea raspunsului dat de server 
-     (apel blocant pina cind serverul raspunde) */
-  if (read (sd, &gameboard,sizeof(gameboard)) < 0)
-    {
-      perror ("[client]Eroare la read() de la server.\n");
-      return errno;
-    }
-  
-  /* afisam mesajul primit */
-  printf ("[client]Mesajul primit este: \n");
-  print_gameboard(gameboard);  
-
-  char start[5];
-  if (read (sd, &start, sizeof(start)) < 0)      // apel blocant pana cand primim mesaj ca putem incepe jocul
-    {
-      perror ("[client]Eroare la read() de la server.\n");
-      return errno;
-    }
-  
-  printf("Putem incepe jocul!\n");
-
-  while (culoare != "r")
+  while(1)
   {
-    printf("[client] Faceti o mutare!\n");
-    scanf("%d", &mutare);
-    
-    if (write (sd, &mutare, sizeof(mutare)) <= 0)
-    {
-      perror ("[client]Eroare la write() spre server.\n");
-      return errno;
-    }
 
-    if (read (sd, &gameboard,sizeof(gameboard)) < 0)
-    {
-      perror ("[client]Eroare la read() de la server.\n");
-      return errno;
-    }
+    if (read (sd, &turn, sizeof(turn)) < 0)
+      {
+        perror ("[client]Eroare la read() de la server.\n");
+        return errno;
+      }
 
-    print_gameboard(gameboard);
+    printf("%s",turn);
+
+    if(strcmp(turn,"TERMINAT") == 0)
+    {
+      printf("%s", turn);
+      close(sd);
+    }
+    else if(strcmp(turn, "WAIT") == 0)
+    {
+      int aaaa =1;
+      //printf("%s", "ASTEPTAM MUTAREA CELUILALT...\n");
+    }
+    else                        // e randul lui
+    {
+      if (read (sd, &gameboard, sizeof(gameboard)) < 0)
+      {
+        perror ("[client]Eroare la read() de la server.\n");
+        return errno;
+      }
+
+      print_gameboard(gameboard);
+
+      printf("[client] Faceti o mutare!\n");      // ++++verificare daca ce a introdus e ok
+      scanf("%d", &mutare);
+      
+      if (write (sd, &mutare, sizeof(mutare)) <= 0)
+      {
+        perror ("[client]Eroare la write() spre server.\n");
+        return errno;
+      }
+
+      printf("[client]Asteptati, celalalt player muta...\n");
+
+    }
   }
+
+
+  /* citirea raspunsului dat de server 
+     (apel blocant pina cind serverul raspunde) ----------------------------------------*/
+  // if (read (sd, &gameboard,sizeof(gameboard)) < 0)
+  //   {
+  //     perror ("[client]Eroare la read() de la server.\n");
+  //     return errno;
+  //   }
+  
+  // /* afisam mesajul primit */
+  // printf ("[client]Mesajul primit este: \n");
+  // print_gameboard(gameboard);  
+
+  // char start[5];
+  // if (read (sd, &start, sizeof(start)) < 0)      // apel blocant pana cand primim mesaj ca putem incepe jocul
+  //   {
+  //     perror ("[client]Eroare la read() de la server.\n");
+  //     return errno;
+  //   }
+  
+  // printf("Putem incepe jocul!\n");
+
+  // while (culoare != "r")
+  // {
+  //   printf("[client] Faceti o mutare!\n");
+  //   scanf("%d", &mutare);
+    
+  //   if (write (sd, &mutare, sizeof(mutare)) <= 0)
+  //   {
+  //     perror ("[client]Eroare la write() spre server.\n");
+  //     return errno;
+  //   }
+
+  //   if (read (sd, &gameboard,sizeof(gameboard)) < 0)
+  //   {
+  //     perror ("[client]Eroare la read() de la server.\n");
+  //     return errno;
+  //   }
+
+  //   print_gameboard(gameboard);
+  //}
   
   /* inchidem conexiunea, am terminat */
   close (sd);
