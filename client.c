@@ -127,25 +127,34 @@ int main (int argc, char *argv[])
       return errno;
     }
 
-  while(1)
+  while(strcmp(turn,"TERMINAT") != 0)
   {
 
     if (read (sd, &turn, sizeof(turn)) < 0)
       {
-        perror ("[client]Eroare la read() de la server.\n");
+        perror ("[client]Eroare la read() de la server!!!!.\n");
         return errno;
       }
 
     printf("%s",turn);
+    printf("\n");
 
     if(strcmp(turn,"TERMINAT") == 0)
     {
-      printf("%s", turn);
-      close(sd);
+      printf("Jocul s-a incheiat!\n");
+      int castigator;
+
+      if (read (sd, &castigator, sizeof(castigator)) < 0)   // primim un mesaj ce contine castigatorul
+      {
+        perror ("[client]Eroare la read() de la server!!!!.\n");
+        return errno;
+      }
+      printf("Castiga jucatorul cu numarul %d", castigator);
+      printf("!\n");
     }
     else if(strcmp(turn, "WAIT") == 0)
     {
-      int aaaa =1;
+      ;
       //printf("%s", "ASTEPTAM MUTAREA CELUILALT...\n");
     }
     else                        // e randul lui
@@ -158,8 +167,13 @@ int main (int argc, char *argv[])
 
       print_gameboard(gameboard);
 
-      printf("[client] Faceti o mutare!\n");      // ++++verificare daca ce a introdus e ok
+      printf("[client] Faceti o mutare!\n");
       scanf("%d", &mutare);
+      while (mutare != 0 && mutare != 1 && mutare != 2 && mutare != 3 && mutare != 4 && mutare != 5 && mutare != 6)
+      {
+        printf("Introduceti un numar intre 0 si 6!\n");
+        scanf("%d", &mutare);
+      }
       
       if (write (sd, &mutare, sizeof(mutare)) <= 0)
       {

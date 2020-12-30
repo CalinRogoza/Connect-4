@@ -42,6 +42,7 @@ static void *treat(void *); /* functia executata de fiecare thread ce realizeaza
 void raspunde(void *);
 char gameboard[RANDURI][COLOANE];
 int numar_jucatori = 0;
+int castigator = 0;
 int is_final(char gameboard[RANDURI][COLOANE]);
 int verifica_orizontala(char gameboard[RANDURI][COLOANE]);
 int verifica_verticala(char gameboard[RANDURI][COLOANE]);
@@ -317,16 +318,20 @@ void raspunde(void *arg)
     }
     if (is_final(gameboard) == 1)
     {
-      // pthread_mutex_lock(&mutex1);
-      // pthread_mutex_lock(&mutex2);
       strcpy(turn, "TERMINAT");
-      printf("ALOOOOOOOOO");
 
       if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
-      {
-        printf("[Thread %d] ",tdL.idThread);
-        perror ("[Thread]Eroare la write() catre client.\n");
-      }
+        {
+          printf("[Thread %d] ",tdL.idThread);
+          perror ("[Thread]Eroare la write() catre client.\n");
+        }
+
+      if(write(tdL.cl, &castigator, sizeof(castigator)) <= 0)
+        {
+          printf("[Thread %d] ",tdL.idThread);
+          perror ("[Thread]Eroare la write() catre client.\n");
+        }
+
     }
     
   }
@@ -423,7 +428,14 @@ int verifica_orizontala(char gameboard[RANDURI][COLOANE])
     for (int j = 0; j < COLOANE - 3; j++)
     {
       if(gameboard[i][j] == gameboard[i][j+1] && gameboard[i][j+1] == gameboard[i][j+2] && gameboard[i][j+2] == gameboard[i][j+3] && gameboard[i][j]!=' ')
+      {
+        if(gameboard[i][j] == 'A')
+          castigator = 1;
+        else
+          castigator = 2;        
+        
         return 1;
+      }
     }
   }
   return 0;
@@ -437,6 +449,11 @@ int verifica_verticala(char gameboard[RANDURI][COLOANE])
     {
       if (gameboard[i][j] == gameboard[i+1][j] && gameboard[i+1][j] == gameboard[i+2][j] && gameboard[i+2][j] == gameboard[i+3][j] && gameboard[i][j] != ' ')
       {
+        if(gameboard[i][j] == 'A')
+          castigator = 1;
+        else
+          castigator = 2;        
+        
         return 1;
       }
     }
@@ -452,6 +469,11 @@ int verifica_diagonala_principala(char gameboard[RANDURI][COLOANE])
     {
       if (gameboard[i][j] == gameboard[i+1][j+1] && gameboard[i+1][j+1] == gameboard[i+2][j+2] && gameboard[i+2][j+2] == gameboard[i+3][j+3] && gameboard[i][j] != ' ')
       {
+        if(gameboard[i][j] == 'A')
+          castigator = 1;
+        else
+          castigator = 2;        
+        
         return 1;
       }
     }
@@ -467,6 +489,11 @@ int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE])
     {
       if (gameboard[i][j] == gameboard[i+1][j-1] && gameboard[i+1][j-1] == gameboard[i+2][j-2] && gameboard[i+2][j-2] == gameboard[i+3][j-3] && gameboard[i][j] != ' ')
       {
+        if(gameboard[i][j] == 'A')
+          castigator = 1;
+        else
+          castigator = 2;        
+        
         return 1;
       }
     }
