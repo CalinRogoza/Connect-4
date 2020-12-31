@@ -14,7 +14,7 @@
 #define RANDURI 6
 #define COLOANE 7
 #define RED  "\x1B[31m"   //https://stackoverflow.com/questions/3585846/color-text-in-terminal-applications-in-unix
-#define GREEN  "\x1B[32m"
+#define GREEN  "\x1B[32m"  //https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
 #define YELLOW  "\x1B[33m"
 #define BLUE  "\x1B[34m"
 #define MAGENTA  "\x1B[35m"
@@ -34,6 +34,8 @@ void raspunde(void *);
 char gameboard[RANDURI][COLOANE];
 int numar_jucatori = 0;
 int castigator = 0;
+int scor_A = 0;
+int scor_B = 0;
 int is_final(char gameboard[RANDURI][COLOANE]);
 int verifica_orizontala(char gameboard[RANDURI][COLOANE]);
 int verifica_verticala(char gameboard[RANDURI][COLOANE]);
@@ -151,6 +153,11 @@ void raspunde(void *arg)
 	struct thData tdL; 
 	tdL= *((struct thData*)arg);
 
+  while (1)
+  {
+    printf("SCOR A: %d\n", scor_A/2);
+    printf("SCOR B: %d\n", scor_B/2);
+  
 	if (read (tdL.cl, &color,sizeof(color)) <= 0)
 	{
 	  printf("[Thread %d]\n",tdL.idThread);
@@ -162,7 +169,7 @@ void raspunde(void *arg)
   if(numar_jucatori == 2)
   {	
     while (is_final(gameboard) == 0)
-    {
+    { 
       if(strcmp(turn, "1") == 0)
       { 
 
@@ -285,6 +292,8 @@ void raspunde(void *arg)
     if (is_final(gameboard) == 1)
     {
       strcpy(turn, "TERMINAT");
+      // pthread_mutex_unlock(&mutex1);
+      // pthread_mutex_unlock(&mutex2);
 
       if(write(tdL.cl, &turn, sizeof(turn)) <= 0)
         {
@@ -301,7 +310,15 @@ void raspunde(void *arg)
     }
     
   }
-		      
+  strcpy(turn, "1"); // pentru a incepe urmatoarea repriza
+  initializeaza_matrice(gameboard);
+  // pthread_mutex_lock(&mutex1);
+  // pthread_mutex_unlock(&mutex2);
+  pthread_mutex_init(&mutex1, NULL);
+  pthread_mutex_init(&mutex2, NULL);
+  // pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+  // pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
+	}      
 }
 
 
@@ -347,9 +364,15 @@ int verifica_orizontala(char gameboard[RANDURI][COLOANE])
       if(gameboard[i][j] == gameboard[i][j+1] && gameboard[i][j+1] == gameboard[i][j+2] && gameboard[i][j+2] == gameboard[i][j+3] && gameboard[i][j]!=' ')
       {
         if(gameboard[i][j] == 'A')
+        {
           castigator = 1;
+          scor_A++;
+        }
         else
-          castigator = 2;        
+        {
+          castigator = 2;
+          scor_B++;
+        }        
         
         return 1;
       }
@@ -367,9 +390,15 @@ int verifica_verticala(char gameboard[RANDURI][COLOANE])
       if (gameboard[i][j] == gameboard[i+1][j] && gameboard[i+1][j] == gameboard[i+2][j] && gameboard[i+2][j] == gameboard[i+3][j] && gameboard[i][j] != ' ')
       {
         if(gameboard[i][j] == 'A')
+        {
           castigator = 1;
+          scor_A++;
+        }
         else
-          castigator = 2;        
+        {
+          castigator = 2;
+          scor_B++;
+        }        
         
         return 1;
       }
@@ -387,9 +416,15 @@ int verifica_diagonala_principala(char gameboard[RANDURI][COLOANE])
       if (gameboard[i][j] == gameboard[i+1][j+1] && gameboard[i+1][j+1] == gameboard[i+2][j+2] && gameboard[i+2][j+2] == gameboard[i+3][j+3] && gameboard[i][j] != ' ')
       {
         if(gameboard[i][j] == 'A')
+        {
           castigator = 1;
+          scor_A++;
+        }
         else
-          castigator = 2;        
+        {
+          castigator = 2;
+          scor_B++;
+        }        
         
         return 1;
       }
@@ -407,9 +442,15 @@ int verifica_diagonala_secundara(char gameboard[RANDURI][COLOANE])
       if (gameboard[i][j] == gameboard[i+1][j-1] && gameboard[i+1][j-1] == gameboard[i+2][j-2] && gameboard[i+2][j-2] == gameboard[i+3][j-3] && gameboard[i][j] != ' ')
       {
         if(gameboard[i][j] == 'A')
+        {
           castigator = 1;
+          scor_A++;
+        }
         else
-          castigator = 2;        
+        {
+          castigator = 2;
+          scor_B++;
+        }          
         
         return 1;
       }

@@ -11,11 +11,12 @@
 #define RANDURI 6
 #define COLOANE 7
 #define RED  "\x1B[31m"   //https://stackoverflow.com/questions/3585846/color-text-in-terminal-applications-in-unix
-#define GREEN  "\x1B[32m"
+#define GREEN  "\x1B[32m"  //https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
 #define ORANGE  "\x1B[33m"
 #define BLUE  "\x1B[34m"
 #define MAGENTA  "\x1B[35m"
 #define CYAN  "\x1B[36m"
+#define BACKGROUND "\x1b[47;4;1m"
 #define RESET  "\x1b[0m"
 char gameboard[RANDURI][COLOANE];
 
@@ -23,7 +24,7 @@ char gameboard[RANDURI][COLOANE];
 extern int errno;
 
 int port;
-
+char culoare[100]="";
 
 void print_gameboard(char gameboard[RANDURI][COLOANE])
 {
@@ -37,14 +38,31 @@ void print_gameboard(char gameboard[RANDURI][COLOANE])
     printf("%c",'|');
     for (int j = 0; j < COLOANE; j++)
     {
-      if (gameboard[i][j] == 'A')
+      if (strcmp(culoare, "MAGENTA") == 0)
       {      
-        printf(RED "%c" RESET, gameboard[i][j]);
+        printf(BACKGROUND MAGENTA "%c" RESET, gameboard[i][j]);
       }
-      else
+      else if (strcmp(culoare, "RED") == 0)
       {
-        printf(BLUE "%c" RESET, gameboard[i][j]);
+        printf(BACKGROUND RED "%c" RESET, gameboard[i][j]);
       }
+      else if (strcmp(culoare, "BLUE") == 0)
+      {
+        printf(BACKGROUND BLUE "%c" RESET, gameboard[i][j]);
+      }
+      else if (strcmp(culoare, "GREEN") == 0)
+      {
+        printf(BACKGROUND GREEN "%c" RESET, gameboard[i][j]);
+      }
+      else if (strcmp(culoare, "CYAN") == 0)
+      {
+        printf(BACKGROUND CYAN "%c" RESET, gameboard[i][j]);
+      }
+      else if (strcmp(culoare, "ORANGE") == 0)
+      {
+        printf(BACKGROUND ORANGE "%c" RESET, gameboard[i][j]);
+      }
+      
     }
     printf("%c",'|');
     printf("\n");
@@ -64,7 +82,6 @@ int main (int argc, char *argv[])
   int sd;			// descriptorul de socket
   struct sockaddr_in server;	// structura folosita pentru conectare 
   int mutare;
-  char culoare[100];
   char turn[10];
 
   /* exista toate argumentele in linia de comanda? */
@@ -99,6 +116,10 @@ int main (int argc, char *argv[])
       return errno;
     }
 
+  while (1)
+  {
+  
+  
 
   printf ("[client]Alegeti o culoare cu care sa jucati(");
   printf(RED "RED" RESET "/");
@@ -108,9 +129,17 @@ int main (int argc, char *argv[])
   printf(ORANGE "ORANGE" RESET "/");
   printf(GREEN "GREEN" RESET "): ");
   fflush (stdout);
-  read (0, culoare, sizeof(culoare));     //citim culoarea selectata de player
+  //read (0, culoare, sizeof(culoare));     //citim culoarea selectata de player
+  scanf("%s", culoare);
 
+  while (strcmp(culoare, "MAGENTA") != 0 && strcmp(culoare, "RED") != 0 && strcmp(culoare, "BLUE") != 0 && strcmp(culoare, "CYAN") != 0 && strcmp(culoare, "GREEN") != 0 && strcmp(culoare, "YELLOW") != 0 && strcmp(culoare, "ORANGE") != 0)
+  {
+    printf("%s", culoare);
+    printf("Introduceti o culoare valida!\n");
+    scanf("%s", culoare);
+  }
   
+
   printf(BLUE "[client] Am citit %s\n" RESET, culoare);
 
 
@@ -177,6 +206,7 @@ int main (int argc, char *argv[])
 
     }
   }
-
+  strcpy(turn, ""); // urmatoarea repriza
+  }
   close (sd);
 }
