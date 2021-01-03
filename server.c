@@ -122,6 +122,7 @@ int main ()
 
   numar_jucatori++;
 
+
 	pthread_create(&th[i], NULL, &treat, td);	      
 				
 	} 
@@ -153,6 +154,12 @@ void raspunde(void *arg)
 	struct thData tdL; 
 	tdL= *((struct thData*)arg);
 
+  if (numar_jucatori > 2) // in caz ca se conecteaza alti clienti
+  {
+    numar_jucatori--;
+    pthread_exit(NULL);
+  }
+
   while (1)
   {
     printf("SCOR A: %d\n", scor_A/2);
@@ -165,7 +172,14 @@ void raspunde(void *arg)
 	}
   
 	printf ("[Thread %d]Mesajul a fost receptionat...%s\n",tdL.idThread, color);
-		      
+
+  
+  while (numar_jucatori < 2)  // asteptam pana se conecteaza ambii jucatori
+  {
+    ;
+  }
+  
+
   if(numar_jucatori == 2)
   {	
     while (is_final(gameboard) == 0)
@@ -310,6 +324,8 @@ void raspunde(void *arg)
     }
     
   }
+  
+  
   strcpy(turn, "1"); // pentru a incepe urmatoarea repriza
   initializeaza_matrice(gameboard);
   // pthread_mutex_lock(&mutex1);
