@@ -132,7 +132,7 @@ int main (int argc, char *argv[])
   //read (0, culoare, sizeof(culoare));     //citim culoarea selectata de player
   scanf("%s", culoare);
 
-  while (strcmp(culoare, "MAGENTA") != 0 && strcmp(culoare, "RED") != 0 && strcmp(culoare, "BLUE") != 0 && strcmp(culoare, "CYAN") != 0 && strcmp(culoare, "GREEN") != 0 && strcmp(culoare, "YELLOW") != 0 && strcmp(culoare, "ORANGE") != 0)
+  while (strcmp(culoare, "MAGENTA") != 0 && strcmp(culoare, "RED") != 0 && strcmp(culoare, "BLUE") != 0 && strcmp(culoare, "CYAN") != 0 && strcmp(culoare, "GREEN") != 0 && strcmp(culoare, "ORANGE") != 0)
   {
     printf("%s", culoare);
     printf("Introduceti o culoare valida!\n");
